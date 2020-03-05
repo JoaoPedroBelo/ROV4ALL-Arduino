@@ -20,7 +20,6 @@ void setup()
   Serial.begin(9600);
   while (!Serial)
   {
-
   }
   // start communication with IMU
   status = IMU.begin();
@@ -52,37 +51,47 @@ void loop()
   // display the data
   //Serial.println(IMU.getAccelX_mss(),6);
   //Serial.println(IMU.getAccelY_mss(),6);
-  //Serial.print("\t");
-  //Serial.print(IMU.getAccelY_mss(),6);
-  //Serial.print("\t");
-  //Serial.print(IMU.getAccelZ_mss(),6);
-  /*Serial.print("\t");
-  Serial.print(IMU.getGyroX_rads(),6);
-  Serial.print("\t");
-  Serial.print(IMU.getGyroY_rads(),6);
-  Serial.print("\t");
-  Serial.print(IMU.getGyroZ_rads(),6);*/
+  //Serial.println(IMU.getAccelZ_mss(),6);
 
-//Para saber a orientação do ROV
+  //Serial.println(IMU.getGyroX_rads(),6);
+  //Serial.print("\t");
+  //Serial.println("Y");
+  //Serial.println(IMU.getGyroY_rads(), 6);
+  //Serial.print("\t");
+  //Serial.println("Z");
+  //Serial.println(IMU.getGyroZ_rads(),6);
+
+  //Para saber a orientação do ROV
   int posicaox = IMU.getMagX_uT();
   int posicaoy = IMU.getMagY_uT();
+
+  //Chama a função da bossula
+  Bossula(posicaox,posicaoy);
+
+  //Delay para obter dados
+  delay(300);
+}
+
+int Bossula(float posicaox, float posicaoy)
+{
+
   //NORTE
   if (posicaox < RefNorte)
   {
     Serial.println("Norte");
   }
   //OESTE e ESTE
-  else if (posicaox <= RefSul && posicaox >=RefNorte)
+  else if (posicaox <= RefSul && posicaox >= RefNorte)
   {
     //Oeste
     if (posicaoy > RefOeste)
     {
-      Serial.println("Oeste");
+      Serial.println("Este");
     }
     //este
     else
     {
-      Serial.println("Este");
+      Serial.println("Oeste");
     }
   }
   //SUL
@@ -90,7 +99,4 @@ void loop()
   {
     Serial.println("Sul");
   }
-
-  //Delay para obter dados
-  delay(500);
 }
