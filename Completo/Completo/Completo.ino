@@ -2,12 +2,22 @@
 #include <LiquidCrystal_I2C.h>
 #include "I2Cdev.h"
 #include "MPU9250.h"
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
 
 // Set the LCD address to 0x27 for a 16 chars and 2 line display
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 //giroscopio
 MPU9250 accelgyro;
 I2Cdev   I2C_M;
+
+
+//temperatura
+#define temperatura_pin 13
+OneWire oneWire(temperatura_pin);
+DallasTemperature sensors(&oneWire);
+float Celcius=0;
 
 
 //Contantes
@@ -91,7 +101,9 @@ void setup()
   // verifica as ligacoes
   Serial.println("Testando ligacoes...");
   Serial.println(accelgyro.testConnection() ? "MPU9250 ligado com sucesso" : "MPU9250 ligacao falhou");
-  
+  //Temperatura 
+    sensors.begin();
+
   delay(1000);
   
 }
@@ -99,11 +111,11 @@ void setup()
 void loop()
 {
  
-  //lê sensor 
+  //lê sensores giros
   getAccel_Data();
   getGyro_Data();
   getCompassDate_calibrated(); // compass data has been calibrated here 
-
+  
   //Dados para analisar aceleração
   Serial.println("Acceleration(g) of X,Y,Z:");
   Serial.print(Axyz[0]); 
@@ -116,9 +128,10 @@ void loop()
   ControloMotoresTraseiros(analogRead(A1),  analogRead(A0));
   //Chama a função da bússola
   bussola(Mxyz[0], Mxyz[1]);
-
+  //Chama a função da temperatura
+  Temperatura();
   //Delay para obter dados
-  delay(500);
+  delay(100);
 }
 
 
@@ -196,7 +209,7 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
     lcd.setCursor(0,1); //Posiciona para escrever
     lcd.print("          "); //escreve
     lcd.setCursor(0,1); //Posiciona para escrever
-    lcd.print("Neutro"); //escreve
+    lcd.print("Stop"); //escreve
 
   }
   else
@@ -243,7 +256,7 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Frente Esq"); //escreve
+      lcd.print("fr/es"); //escreve
     }
 
     //Direita Frente
@@ -256,7 +269,7 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("      "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Frente Dir"); //escreve
+      lcd.print("fr/dr"); //escreve
     }
 
     //Esquerda Trás
@@ -269,7 +282,7 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Tras Esq"); //escreve
+      lcd.print("tr/es"); //escreve
     }
 
     //Direita Trás
@@ -282,13 +295,29 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Tras Dir"); //escreve
+      lcd.print("tr/dr
+      "); //escreve
     }
 
   }
 
  
 }
+void Temperatura(){
+  sensors.requestTemperatures(); 
+  Celcius=sensors.getTempCByIndex(0);
+  if(Celcius != -127) //Acontece dar -127 quando os motores estao a trabalhar a alta velocidade
+  {
+  lcd.setCursor(11,0); //Posiciona para escrever
+  lcd.print(Celcius);
+  lcd.setCursor(15,0);
+  lcd.print("C");
+  }
+
+}
+
+
+
 
 void Mxyz_init_calibrated ()
 {
