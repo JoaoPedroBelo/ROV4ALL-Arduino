@@ -37,14 +37,20 @@ int MotorA_IN2 = 5;
 int MotorB_IN3 = 2;
 int MotorB_IN4 = 3;
 
+//Subida e Descida
+int MotorC_IN1 = 7;
+int MotorC_IN2 = 8;
 
 //Velocidade
-int MotorSpeed1 = 0;
-int MotorSpeed2 = 0;
-
-int PinSpeed = 6;// PIN PWM (~)
-int velocidade;
-
+int MotorA_ENA = 6;// PIN PWM (~)
+int MotorB_ENB = 9;
+int MotorC_ENA = 10;
+int velocidade =0;
+//botões
+int buttonUP = 12;
+int buttonDown = 11;
+//led botões
+int buttonLed= A3;
 //Giro
 uint8_t buffer_m[6];
 int16_t ax, ay, az;
@@ -88,11 +94,17 @@ void setup()
   //Motores
   pinMode(MotorA_IN1, OUTPUT); //Motor A
   pinMode(MotorA_IN2, OUTPUT); //Motor A
-
   pinMode(MotorB_IN3, OUTPUT); //Motor B
   pinMode(MotorB_IN4, OUTPUT); //Motor B
-
-  pinMode(10, OUTPUT);
+  pinMode(MotorC_IN1, OUTPUT); //Motor Subida / Descida
+  pinMode(MotorC_IN2, OUTPUT); //Motor Subida / Descida
+  pinMode(MotorA_ENA, OUTPUT); //Velocidade do motor
+  pinMode(MotorB_ENB, OUTPUT); //Velocidade do motor
+  pinMode(MotorC_ENA, OUTPUT); //Velocidade do motor 
+  //Botão
+  pinMode(buttonUP, INPUT);
+  pinMode(buttonDown, INPUT);
+  pinMode(buttonLed, OUTPUT);
 
   // A iniciar I2C
   Serial.println("a iniciar I2C....");
@@ -124,8 +136,10 @@ void loop()
   Serial.print(",");
   Serial.println(Axyz[2]);
   
-  //Chama a função da motores traseiros
-  ControloMotoresTraseiros(analogRead(A1),  analogRead(A0));
+  //Chama a função dos motores traseiros
+  ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
+  //Chama a função do motor central
+  ControloMotoreCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
   //Chama a função da bússola
   bussola(Mxyz[0], Mxyz[1]);
   //Chama a função da temperatura
@@ -170,7 +184,47 @@ void bussola(float posicaoX, float posicaoY)
   }
 }
 
-void ControloMotoresTraseiros(int eixoX, int eixoY)
+void ControloMotoreCentralPotenciometro (int estadoSubida, int estadoDescida)
+{
+  digitalWrite(buttonLed,HIGH);
+   //Le o potenciometro
+  velocidade = analogRead(A2);
+  //Converte para as unidades do motor (0-255)
+  velocidade = velocidade*0.23; 
+  analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
+  
+  //Le o potenciometro
+  velocidade = analogRead(A2);
+  //Converte para as unidades do motor (0-255)
+  velocidade = velocidade*0.23; 
+    if (estadoSubida == LOW) {  //botao clicado
+      digitalWrite(MotorC_IN1, LOW);
+      digitalWrite(MotorC_IN2, HIGH);
+      
+      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.print("          "); //escreve
+      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.print("Subir"); //escreve
+
+      }
+     if (estadoDescida == LOW) {  //botao clicado
+      digitalWrite(MotorC_IN1, HIGH);
+      digitalWrite(MotorC_IN2, LOW);
+      
+      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.print("          "); //escreve
+      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.print("Descer"); //escreve
+      }
+   if  (estadoSubida != LOW && estadoDescida != LOW){
+      digitalWrite(MotorC_IN1, LOW);
+      digitalWrite(MotorC_IN2, LOW);
+  }
+  
+}
+
+
+void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
 {
   lcd.setCursor(12,1); //Posiciona para escrever
   lcd.print("    "); //limpa
@@ -178,8 +232,9 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
-  Serial.println(velocidade);
-  analogWrite(PinSpeed,velocidade);// Then inject it to our motor
+  analogWrite(MotorA_ENA,velocidade);// injecta a velocidade no motor
+  analogWrite(MotorB_ENB,velocidade);
+  
   int VelocidadePerc = map(velocidade, 0, 220, 0, 100); //Velocidade em percentagem
   if(VelocidadePerc>100){
     VelocidadePerc=100;
@@ -209,7 +264,7 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
     lcd.setCursor(0,1); //Posiciona para escrever
     lcd.print("          "); //escreve
     lcd.setCursor(0,1); //Posiciona para escrever
-    lcd.print("Stop"); //escreve
+    lcd.print("parado"); //escreve
 
   }
   else
@@ -222,9 +277,6 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
       digitalWrite(MotorA_IN2, HIGH);
       digitalWrite(MotorB_IN3, LOW);
       digitalWrite(MotorB_IN4, HIGH);
-      //Velocidade, como estamos a ir para trás temos de inverter as leituras
-      eixoY = eixoY - 460; // Numero fica negativo
-      eixoY = eixoY * -1;  // Torna o numero positivo
 
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
@@ -295,8 +347,7 @@ void ControloMotoresTraseiros(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("tr/dr
-      "); //escreve
+      lcd.print("tr/dr"); //escreve
     }
 
   }

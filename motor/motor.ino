@@ -7,8 +7,19 @@ int MotorA_IN2 = 5;
 int MotorB_IN3 = 2;
 int MotorB_IN4 = 3;
 
-int PinSpeed = 6;// PIN PWM (~)
-int velocidade=0;
+//Subida e Descida
+int MotorC_IN1 = 7;
+int MotorC_IN2 = 8;
+
+//Velocidade
+int MotorA_ENA = 6;// PIN PWM (~)
+int MotorB_ENB = 9;
+int MotorC_ENA = 10;
+int velocidade =0;
+//botões
+int buttonUP = 12;
+int buttonDown = 11;
+
 
 void setup()
 {
@@ -19,16 +30,60 @@ void setup()
   pinMode(MotorA_IN2, OUTPUT); //Motor A
   pinMode(MotorB_IN3, OUTPUT); //Motor B
   pinMode(MotorB_IN4, OUTPUT); //Motor B
-  pinMode(PinSpeed, OUTPUT);  
+  pinMode(MotorC_IN1, OUTPUT); //Motor Subida / Descida
+  pinMode(MotorC_IN2, OUTPUT); //Motor Subida / Descida
+  pinMode(MotorA_ENA, OUTPUT); //Velocidade do motor
+  pinMode(MotorB_ENB, OUTPUT); //Velocidade do motor
+  pinMode(MotorC_ENA, OUTPUT); //Velocidade do motor 
+  //Botão
+  pinMode(buttonUP, INPUT);
+  pinMode(buttonDown, INPUT);
+
 }
 
 void loop()
 {
+  
   //Chama a função da motores traseiros
   ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
+  ControloMotoreCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
+
   //ControloMotoresTraseirosJoystick(analogRead(A1),  analogRead(A0));
+  //ControloMotoreCentralJoystick(digitalRead(buttonUP),digitalRead(buttonDown));  
   //Delay para obter dados
   delay(500);
+
+
+}
+
+
+void ControloMotoreCentralPotenciometro (int estadoSubida, int estadoDescida)
+{
+   //Le o potenciometro
+  velocidade = analogRead(A2);
+  //Converte para as unidades do motor (0-255)
+  velocidade = velocidade*0.23; 
+  analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
+  
+  //Le o potenciometro
+  velocidade = analogRead(A2);
+  //Converte para as unidades do motor (0-255)
+  velocidade = velocidade*0.23; 
+    if (estadoSubida == LOW) {  //button is pressed
+      digitalWrite(MotorC_IN1, LOW);
+      digitalWrite(MotorC_IN2, HIGH);
+      }
+     if (estadoDescida == LOW) {  //button is pressed
+      digitalWrite(MotorC_IN1, HIGH);
+      digitalWrite(MotorC_IN2, LOW);
+      }
+   if  (estadoSubida != LOW && estadoDescida != LOW){
+          Serial.println("largado");
+
+      digitalWrite(MotorC_IN1, LOW);
+      digitalWrite(MotorC_IN2, LOW);
+  }
+  
 }
 
 
@@ -39,8 +94,11 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
-  Serial.println(velocidade);
-  analogWrite(PinSpeed,velocidade);// Then inject it to our motor
+  analogWrite(MotorA_ENA,velocidade);// injecta a velocidade no motor
+  analogWrite(MotorB_ENB,velocidade);
+
+    if ((eixoX > 460 && eixoX < 564) && (eixoY > 460 && eixoY < 564)) // neutro
+
     {
     digitalWrite(MotorA_IN1, LOW);
     digitalWrite(MotorA_IN2, LOW);
@@ -57,9 +115,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       digitalWrite(MotorA_IN2, HIGH);
       digitalWrite(MotorB_IN3, LOW);
       digitalWrite(MotorB_IN4, HIGH);
-      //Velocidade, como estamos a ir para trás temos de inverter as leituras
-      eixoY = eixoY - 460; // Numero fica negativo
-      eixoY = eixoY * -1;  // Torna o numero positivo
+
     }
     //Frente
     else if (eixoY > 564 && (eixoX > 400 && eixoX < 600))
@@ -112,8 +168,28 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
     }
 
   }
+}
 
- 
+void ControloMotoreCentralJoystick(int estadoSubida, int estadoDescida){
+   //Le o potenciometro
+  velocidade = 255;
+  analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
+
+    if (estadoSubida == LOW) {  //button is pressed
+      digitalWrite(MotorC_IN1, LOW);
+      digitalWrite(MotorC_IN2, HIGH);
+      }
+     if (estadoDescida == LOW) {  //button is pressed
+      digitalWrite(MotorC_IN1, HIGH);
+      digitalWrite(MotorC_IN2, LOW);
+      }
+   if  (estadoSubida != LOW && estadoDescida != LOW){
+          Serial.println("largado");
+
+      digitalWrite(MotorC_IN1, LOW);
+      digitalWrite(MotorC_IN2, LOW);
+  }
+  
 }
 
 void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
@@ -209,6 +285,6 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
 
     }
   }
-        analogWrite(PinSpeed,velocidade);// Then inject it to our motor
+        analogWrite(MotorA_ENA,velocidade);// injecta a velocidade no motor
+        analogWrite(MotorB_ENB,velocidade);
 }
-
