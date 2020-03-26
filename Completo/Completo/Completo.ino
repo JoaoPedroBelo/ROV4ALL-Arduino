@@ -6,14 +6,35 @@
 #include <DallasTemperature.h>
 
 
-// Set the LCD address to 0x27 for a 16 chars and 2 line display
+// Define um display 2 linhas por 12 coluna
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-//giroscopio
+//para o giroscpio
 MPU9250 accelgyro;
 I2Cdev   I2C_M;
+uint8_t buffer_m[6];
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+int16_t   mx, my, mz;
+float heading;
+float tiltheading;
+float Axyz[3];
+float Gxyz[3];
+float Mxyz[3];
+#define sample_num_mdate  5000   
+volatile float mx_sample[3];
+volatile float my_sample[3];
+volatile float mz_sample[3];
+static float mx_centre = 0;
+static float my_centre = 0;
+static float mz_centre = 0;
+volatile int mx_max =0;
+volatile int my_max =0;
+volatile int mz_max =0;
+volatile int mx_min =0;
+volatile int my_min =0;
+volatile int mz_min =0;
 
-
-//temperatura
+//para o sensor detemperatura
 #define temperatura_pin 13
 OneWire oneWire(temperatura_pin);
 DallasTemperature sensors(&oneWire);
@@ -21,7 +42,7 @@ float Celcius=0;
 
 
 //Contantes
-//VALORES DE REFERENCIA RETIRADOS DE inúmeros testes ao sensor, (calibrado com a bússola do telemovel)
+//Valor de referência para a bussola
 //EIXO DO X
 #define RefSul 35
 #define RefNorte 4
@@ -31,7 +52,7 @@ float Celcius=0;
 
 //Motores
 // Motor A -> Lado direito
-int MotorA_IN1 = 4; //Cada motor tem 2 pins
+int MotorA_IN1 = 4;
 int MotorA_IN2 = 5;
 // Motor B -> Lado esquerdo
 int MotorB_IN3 = 2;
@@ -46,51 +67,33 @@ int MotorA_ENA = 6;// PIN PWM (~)
 int MotorB_ENB = 9;
 int MotorC_ENA = 10;
 int velocidade =0;
+
 //botões
 int buttonUP = 12;
 int buttonDown = 11;
+
 //led botões
 int buttonLed= A3;
-//Giro
-uint8_t buffer_m[6];
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t   mx, my, mz;
-float heading;
-float tiltheading;
-float Axyz[3];
-float Gxyz[3];
-float Mxyz[3];
-
-#define sample_num_mdate  5000   
-   
-volatile float mx_sample[3];
-volatile float my_sample[3];
-volatile float mz_sample[3];
-static float mx_centre = 0;
-static float my_centre = 0;
-static float mz_centre = 0;
-volatile int mx_max =0;
-volatile int my_max =0;
-volatile int mz_max =0;
-volatile int mx_min =0;
-volatile int my_min =0;
-volatile int mz_min =0;
 
 void setup()
 {
+  // inicia o LCD
   lcd.begin();
   // Liga a luz
   lcd.backlight();
+  
+  //Temperatura 
+  sensors.begin();
+
   //Mensagem de inicio
   lcd.print("a iniciar");
   
-  // join I2C bus (I2Cdev library doesn't do this automatically)
+  // Inicia o I2C
   Wire.begin(); 
-    // inicia o LCD
 
   // serial para a consola (testes)
   Serial.begin(38400);
+
   //Motores
   pinMode(MotorA_IN1, OUTPUT); //Motor A
   pinMode(MotorA_IN2, OUTPUT); //Motor A
@@ -101,6 +104,7 @@ void setup()
   pinMode(MotorA_ENA, OUTPUT); //Velocidade do motor
   pinMode(MotorB_ENB, OUTPUT); //Velocidade do motor
   pinMode(MotorC_ENA, OUTPUT); //Velocidade do motor 
+
   //Botão
   pinMode(buttonUP, INPUT);
   pinMode(buttonDown, INPUT);
@@ -113,22 +117,22 @@ void setup()
   // verifica as ligacoes
   Serial.println("Testando ligacoes...");
   Serial.println(accelgyro.testConnection() ? "MPU9250 ligado com sucesso" : "MPU9250 ligacao falhou");
-  //Temperatura 
-    sensors.begin();
-
+  
   delay(1000);
   
 }
 
 void loop()
 {
- 
-  //lê sensores giros
+  //Liga o led dos botões
+  digitalWrite(buttonLed,HIGH);
+
+  //lê giroscopio
   getAccel_Data();
   getGyro_Data();
-  getCompassDate_calibrated(); // compass data has been calibrated here 
+  getCompassDate_calibrated(); // calibra o compass
   
-  //Dados para analisar aceleração
+  //Dados para analisar aceleração Posteriormente
   Serial.println("Acceleration(g) of X,Y,Z:");
   Serial.print(Axyz[0]); 
   Serial.print(",");
@@ -138,12 +142,16 @@ void loop()
   
   //Chama a função dos motores traseiros
   ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
+
   //Chama a função do motor central
-  ControloMotoreCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
+  ControloMotorCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
+
   //Chama a função da bússola
   bussola(Mxyz[0], Mxyz[1]);
+
   //Chama a função da temperatura
   Temperatura();
+
   //Delay para obter dados
   delay(100);
 }
@@ -160,15 +168,18 @@ void bussola(float posicaoX, float posicaoY)
     lcd.setCursor(0,0); //Posiciona para escrever
     lcd.print("Norte"); //escreve
   }
+
   //OESTE e ESTE
   else if (posicaoX <= RefSul && posicaoX >= RefNorte)
   {
+
     //Oeste
     if (posicaoY > RefOeste)
     {
       lcd.setCursor(0,0); //Posiciona para escrever
       lcd.print("Este"); //escreve
     }
+
     //este
     else
     {
@@ -176,6 +187,7 @@ void bussola(float posicaoX, float posicaoY)
       lcd.print("Oeste"); //escreve
     }
   }
+
   //SUL
   else if (posicaoX > RefSul)
   {
@@ -184,10 +196,9 @@ void bussola(float posicaoX, float posicaoY)
   }
 }
 
-void ControloMotoreCentralPotenciometro (int estadoSubida, int estadoDescida)
+void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
 {
-  digitalWrite(buttonLed,HIGH);
-   //Le o potenciometro
+  //Le o potenciometro
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
@@ -216,7 +227,8 @@ void ControloMotoreCentralPotenciometro (int estadoSubida, int estadoDescida)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("Descer"); //escreve
       }
-   if  (estadoSubida != LOW && estadoDescida != LOW){
+
+   if  (estadoSubida != LOW && estadoDescida != LOW){ //nenhum clicado, motor desligado
       digitalWrite(MotorC_IN1, LOW);
       digitalWrite(MotorC_IN2, LOW);
   }
@@ -354,7 +366,9 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
 
  
 }
-void Temperatura(){
+
+void Temperatura()
+{
   sensors.requestTemperatures(); 
   Celcius=sensors.getTempCByIndex(0);
   if(Celcius != -127) //Acontece dar -127 quando os motores estao a trabalhar a alta velocidade
@@ -367,12 +381,10 @@ void Temperatura(){
 
 }
 
-
-
-
+//****** Funções da biblioteca do giroscopio, mais informação http://wiki.seeedstudio.com/Grove-IMU_9DOF_v2.0/
 void Mxyz_init_calibrated ()
 {
-  
+
   Serial.println(F("Before using 9DOF,we need to calibrate the compass frist,It will takes about 2 minutes."));
   Serial.print("  ");
   Serial.println(F("During  calibratting ,you should rotate and turn the 9DOF all the time within 2 minutes."));
