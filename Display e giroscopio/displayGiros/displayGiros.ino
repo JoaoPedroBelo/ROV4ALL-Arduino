@@ -10,7 +10,7 @@ MPU9250 IMU(Wire, 0x68);
 
 
 //Contantes
-//VALORES DE REFERENCIA RETIRADOS DE INUMEROS TESTES, valores do sensor
+
 //EIXO DO X
 #define RefSul 35
 #define RefNorte 4
@@ -21,9 +21,9 @@ int status;
 
 void setup()
 {
-  // initialize the LCD
+  // inicia o lcd
   lcd.begin();
-  // Turn on the blacklight and print a message.
+  // liga a luz
   lcd.backlight();
   //Default data
   lcd.print("a iniciar");
@@ -55,7 +55,7 @@ void setup()
 void loop()
 {
 
-  //lcd.print("teste!");
+  //lê sensor
   IMU.readSensor();
   //Para saber a orientação do ROV
   int posicaox = IMU.getMagX_uT();
