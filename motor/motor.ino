@@ -15,7 +15,10 @@ int MotorC_IN2 = 8;
 int MotorA_ENA = 6;// PIN PWM (~)
 int MotorB_ENB = 9;
 int MotorC_ENA = 10;
-int velocidade =0;
+int velocidade =0; 
+int velocidadeA=0; 
+int velocidadeB=0; 
+
 //botões
 int buttonUP = 12;
 int buttonDown = 11;
@@ -46,10 +49,10 @@ void loop()
   
   //Chama a função da motores traseiros
   ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
-  ControloMotoreCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
+  ControloMotorCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
 
   //ControloMotoresTraseirosJoystick(analogRead(A1),  analogRead(A0));
-  //ControloMotoreCentralJoystick(digitalRead(buttonUP),digitalRead(buttonDown));  
+  //ControloMotorCentralJoystick(digitalRead(buttonUP),digitalRead(buttonDown));  
   //Delay para obter dados
   delay(500);
 
@@ -57,7 +60,7 @@ void loop()
 }
 
 
-void ControloMotoreCentralPotenciometro (int estadoSubida, int estadoDescida)
+void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
 {
    //Le o potenciometro
   velocidade = analogRead(A2);
@@ -170,9 +173,9 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
   }
 }
 
-void ControloMotoreCentralJoystick(int estadoSubida, int estadoDescida){
+void ControloMotorCentralJoystick(int estadoSubida, int estadoDescida){
    //Le o potenciometro
-  velocidade = 255;
+  velocidade = 255; //não é possivel ajustar a velocidade
   analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
 
     if (estadoSubida == LOW) {  //button is pressed
@@ -184,7 +187,6 @@ void ControloMotoreCentralJoystick(int estadoSubida, int estadoDescida){
       digitalWrite(MotorC_IN2, LOW);
       }
    if  (estadoSubida != LOW && estadoDescida != LOW){
-          Serial.println("largado");
 
       digitalWrite(MotorC_IN1, LOW);
       digitalWrite(MotorC_IN2, LOW);
@@ -201,8 +203,6 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
     digitalWrite(MotorA_IN2, LOW);
     digitalWrite(MotorB_IN3, LOW);
     digitalWrite(MotorB_IN4, LOW);
-
-
   }
   else
   {
@@ -216,10 +216,9 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
       digitalWrite(MotorB_IN4, HIGH);
       //Velocidade, como estamos a ir para trás temos de inverter as leituras
       eixoY = eixoY - 460; // Numero fica negativo
-      eixoY = eixoY * -1;  // Torna o numero positivo
-      velocidade = map(eixoY, 0, 460, 0, 230);
-
-      
+      eixoY = eixoY * -1;  // Torna o numero positivo, uma velocidade não é negativa.
+      velocidadeA = map(eixoY, 0, 460, 0, 230);
+      velocidadeB = map(eixoY, 0, 460, 0, 230);   
     }
     //Frente
     else if (eixoY > 564 && (eixoX > 400 && eixoX < 600))
@@ -228,7 +227,8 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
       digitalWrite(MotorA_IN2, LOW);
       digitalWrite(MotorB_IN3, HIGH);
       digitalWrite(MotorB_IN4, LOW);
-      velocidade = map(eixoY, 512, 790, 0, 230);
+      velocidadeA = map(eixoY, 512, 790, 0, 230);
+      velocidadeB = map(eixoY, 512, 790, 0, 230);
 
     }
 
@@ -237,24 +237,31 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
     {
       digitalWrite(MotorA_IN1, HIGH);
       digitalWrite(MotorA_IN2, LOW);
-      digitalWrite(MotorB_IN3, LOW);
+      digitalWrite(MotorB_IN3, HIGH);
       digitalWrite(MotorB_IN4, LOW);
       velocidade = map(eixoX, 0, 400, 0, 230);
-      velocidade = velocidade + eixoX;
-      if (velocidade > 255)velocidade = 255;
+      velocidadeA = velocidade + eixoX;
+      velocidadeB = velocidade - eixoX;
+
+      if (velocidadeA > 255)velocidadeA = 255;
+      if (velocidadeB < 0) velocidadeB = 0;		  
+
 
     }
 
     //Direita Frente
     else if (eixoX > 564 && eixoY > 512)
     {
-      digitalWrite(MotorA_IN1, LOW);
+      digitalWrite(MotorA_IN1, HIGH);
       digitalWrite(MotorA_IN2, LOW);
       digitalWrite(MotorB_IN3, HIGH);
       digitalWrite(MotorB_IN4, LOW);
       velocidade = map(eixoX, 564, 790, 0, 230);
-      velocidade = velocidade + eixoX;
-      if (velocidade > 255)velocidade = 255;
+      velocidadeA = velocidade - eixoX;
+      velocidadeB = velocidade + eixoX;
+
+      if (velocidadeB > 255)velocidadeA = 255;
+      if (velocidadeA < 0) velocidadeB = 0;		 
 
     }
 
@@ -264,10 +271,13 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
       digitalWrite(MotorA_IN1, LOW);
       digitalWrite(MotorA_IN2, HIGH);
       digitalWrite(MotorB_IN3, LOW);
-      digitalWrite(MotorB_IN4, LOW);
+      digitalWrite(MotorB_IN4, HIGH);
       velocidade = map(eixoX, 0, 400, 0, 230);
-      velocidade = velocidade + eixoX;
-      if (velocidade > 255)velocidade = 255;
+      velocidadeA = velocidade + eixoX;
+      velocidadeB = velocidade - eixoX;
+
+      if (velocidadeA > 255)velocidadeA = 255;
+      if (velocidadeB < 0) velocidadeB = 0;		 
 
     }
 
@@ -275,16 +285,20 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
     else if (eixoX > 564 && eixoY < 512)
     {
       digitalWrite(MotorA_IN1, LOW);
-      digitalWrite(MotorA_IN2, LOW);
+      digitalWrite(MotorA_IN2, HIGH);
       digitalWrite(MotorB_IN3, LOW);
       digitalWrite(MotorB_IN4, HIGH);
       velocidade = map(eixoX, 564, 790, 0, 230);
-      velocidade = velocidade + eixoX;
-      if (velocidade > 255)velocidade = 255;
+      velocidadeA = velocidade - eixoX;
+      velocidadeB = velocidade + eixoX;
+
+      if (velocidadeB > 255)velocidadeA = 255;
+      if (velocidadeA < 0) velocidadeB = 0;	
 
 
     }
   }
-        analogWrite(MotorA_ENA,velocidade);// injecta a velocidade no motor
-        analogWrite(MotorB_ENB,velocidade);
+      // injecta a velocidade no motor
+        analogWrite(MotorA_ENA,velocidadeA);
+        analogWrite(MotorB_ENB,velocidadeB);
 }
