@@ -1,29 +1,15 @@
 #include "Wire.h"
-
-// I2Cdev and MPU9250 must be installed as libraries, or else the .cpp/.h files
-// for both classes must be in the include path of your project
 #include "I2Cdev.h"
 #include "MPU9250.h"
 
-// class default I2C address is 0x68
-// specific I2C addresses may be passed as a parameter here
-// AD0 low = 0x68 (default for InvenSense evaluation board)
-// AD0 high = 0x69
 MPU9250 accelgyro;
 I2Cdev   I2C_M;
-
 uint8_t buffer_m[6];
-
-
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
 int16_t   mx, my, mz;
-
-
-
 float heading;
 float tiltheading;
-
 float Axyz[3];
 float Gxyz[3];
 float Mxyz[3];
@@ -49,27 +35,24 @@ volatile int mz_min =0;
 
 
 void setup() {
-  // join I2C bus (I2Cdev library doesn't do this automatically)
   Wire.begin();
 
-  // initialize serial communication
-  // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
-  // it's really up to you depending on your project)
+  //Verificar sempre se a consola esta no mesmo valor que abaixo, neste caso é o 38400
   Serial.begin(38400);
 
-  // initialize device
-  Serial.println("Initializing I2C devices...");
+  // Inicia os dispositivos I2C
+  Serial.println("a iniciar dispositivos2C");
   accelgyro.initialize();
 
-  // verify connection
-  Serial.println("Testing device connections...");
-  Serial.println(accelgyro.testConnection() ? "MPU9250 connection successful" : "MPU9250 connection failed");
+  // verifica a ligação
+  Serial.println("a testar as ligações...");
+  Serial.println(accelgyro.testConnection() ? "MPU9250 Ligado com sucesso" : "MPU9250 verifique as ligações");
   
   delay(1000);
   Serial.println("     ");
  
-  //Mxyz_init_calibrated ();
-  
+ //Usar esta função apenas se os dados estiverem bastante errados pois esta função irá calibrar o sensor
+  //Mxyz_init_calibrated() 
 }
 
 void loop() 
@@ -77,11 +60,11 @@ void loop()
   
   getAccel_Data();
   getGyro_Data();
-  getCompassDate_calibrated(); // compass data has been calibrated here 
-  getHeading();       //before we use this function we should run 'getCompassDate_calibrated()' frist, so that we can get calibrated data ,then we can get correct angle .          
+  getCompassDate_calibrated(); // A bússola é calibrada aqui
+  getHeading();       //Antes de utilizar esta função é necessário efetuar a chamada da função getCompassDate_calibrated    
   getTiltHeading();           
   
-  Serial.println("calibration parameter: ");
+  Serial.println("Parametros de calibração ");
   Serial.print(mx_centre);
   Serial.print("         ");
   Serial.print(my_centre);
@@ -90,40 +73,34 @@ void loop()
   Serial.println("     ");
   
   
-  Serial.println("Acceleration(g) of X,Y,Z:");
+  Serial.println("aceleração(g) de X,Y,Z:");
   Serial.print(Axyz[0]); 
   Serial.print(",");
   Serial.print(Axyz[1]); 
   Serial.print(",");
   Serial.println(Axyz[2]); 
-  Serial.println("Gyro(degress/s) of X,Y,Z:");
+  Serial.println("giro (graus) de X,Y,Z:");
   Serial.print(Gxyz[0]); 
   Serial.print(",");
   Serial.print(Gxyz[1]); 
   Serial.print(",");
   Serial.println(Gxyz[2]); 
-  Serial.println("Compass Value of X,Y,Z:");
+  Serial.println("bússola de X,Y,Z:");
   Serial.print(Mxyz[0]); 
   Serial.print(",");
   Serial.print(Mxyz[1]); 
   Serial.print(",");
   Serial.println(Mxyz[2]);
-  Serial.println("The clockwise angle between the magnetic north and X-Axis:");
+  Serial.println("O ângulo no sentido horário entre o norte magnético e o eixo X:");
   Serial.print(heading);
   Serial.println(" ");
-  Serial.println("The clockwise angle between the magnetic north and the projection of the positive X-Axis in the horizontal plane:");
+  Serial.println("O ângulo no sentido horário entre o norte magnético e a projeção do eixo X positivo no plano horizontal:");
   Serial.println(tiltheading);
   Serial.println("   ");
   Serial.println("   ");
   Serial.println("   ");
 
-
-
   delay(2000);
-
-
-
-
   
 }
 
@@ -151,21 +128,21 @@ void getTiltHeading(void)
 void Mxyz_init_calibrated ()
 {
   
-  Serial.println(F("Before using 9DOF,we need to calibrate the compass frist,It will takes about 2 minutes."));
+  Serial.println(F("Antes de usar o 9DOF, precisamos calibrar a bússola primeiro, isso leva cerca de 2 minutos."));
   Serial.print("  ");
-  Serial.println(F("During  calibratting ,you should rotate and turn the 9DOF all the time within 2 minutes."));
+  Serial.println(F("Durante a calibração, você deve girar e girar o 9DOF o tempo todo em 2 minutos."));
   Serial.print("  ");
-  Serial.println(F("If you are ready ,please sent a command data 'ready' to start sample and calibrate."));
+  Serial.println(F("Se você estiver pronto, envie um dado de comando 'ready' para iniciar a amostra e calibrar."));
   while(!Serial.find("ready")); 
   Serial.println("  ");
   Serial.println("ready");
-  Serial.println("Sample starting......");
-  Serial.println("waiting ......");
+  Serial.println("Amostra começando ......");
+  Serial.println("esperando ......");
   
   get_calibration_Data ();
   
   Serial.println("     ");
-  Serial.println("compass calibration parameter ");
+  Serial.println("parâmetro de calibração da bússola ");
   Serial.print(mx_centre);
   Serial.print("     ");
   Serial.print(my_centre);
@@ -174,28 +151,19 @@ void Mxyz_init_calibrated ()
   Serial.println("    ");
 }
 
-
 void get_calibration_Data ()
 {
     for (int i=0; i<sample_num_mdate;i++)
       {
       get_one_sample_date_mxyz();
-      /*
-      Serial.print(mx_sample[2]);
-      Serial.print(" ");
-      Serial.print(my_sample[2]);                            //you can see the sample data here .
-      Serial.print(" ");
-      Serial.println(mz_sample[2]);
-      */
-
 
       
       if (mx_sample[2]>=mx_sample[1])mx_sample[1] = mx_sample[2];     
-      if (my_sample[2]>=my_sample[1])my_sample[1] = my_sample[2]; //find max value      
+      if (my_sample[2]>=my_sample[1])my_sample[1] = my_sample[2]; //encontra o valor máximo      
       if (mz_sample[2]>=mz_sample[1])mz_sample[1] = mz_sample[2];   
       
       if (mx_sample[2]<=mx_sample[0])mx_sample[0] = mx_sample[2];
-      if (my_sample[2]<=my_sample[0])my_sample[0] = my_sample[2];//find min value
+      if (my_sample[2]<=my_sample[0])my_sample[0] = my_sample[2];//encontra o valor mínimo
       if (mz_sample[2]<=mz_sample[0])mz_sample[0] = mz_sample[2];
             
       }
@@ -216,11 +184,6 @@ void get_calibration_Data ()
   
 }
 
-
-
-
-
-
 void get_one_sample_date_mxyz()
 {   
     getCompass_Data();
@@ -229,11 +192,10 @@ void get_one_sample_date_mxyz()
     mz_sample[2] = Mxyz[2];
 } 
 
-
 void getAccel_Data(void)
 {
   accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-  Axyz[0] = (double) ax / 16384;//16384  LSB/g
+  Axyz[0] = (double) ax / 16384;
   Axyz[1] = (double) ay / 16384;
   Axyz[2] = (double) az / 16384; 
 }
@@ -241,14 +203,14 @@ void getAccel_Data(void)
 void getGyro_Data(void)
 {
   accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-  Gxyz[0] = (double) gx * 250 / 32768;//131 LSB(��/s)
+  Gxyz[0] = (double) gx * 250 / 32768;
   Gxyz[1] = (double) gy * 250 / 32768;
   Gxyz[2] = (double) gz * 250 / 32768;
 }
 
 void getCompass_Data(void)
 {
-  I2C_M.writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //enable the magnetometer
+  I2C_M.writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //ativar o magnetômetro
   delay(10);
   I2C_M.readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer_m);
   
@@ -256,9 +218,6 @@ void getCompass_Data(void)
   my = ((int16_t)(buffer_m[3]) << 8) | buffer_m[2] ;
   mz = ((int16_t)(buffer_m[5]) << 8) | buffer_m[4] ;  
   
-  //Mxyz[0] = (double) mx * 1200 / 4096;
-  //Mxyz[1] = (double) my * 1200 / 4096;
-  //Mxyz[2] = (double) mz * 1200 / 4096;
   Mxyz[0] = (double) mx * 4800 / 8192;
   Mxyz[1] = (double) my * 4800 / 8192;
   Mxyz[2] = (double) mz * 4800 / 8192;

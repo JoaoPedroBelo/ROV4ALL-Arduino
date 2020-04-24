@@ -34,7 +34,7 @@ volatile int mx_min =0;
 volatile int my_min =0;
 volatile int mz_min =0;
 
-//para o sensor detemperatura
+//para o sensor de temperatura
 #define temperatura_pin 13
 OneWire oneWire(temperatura_pin);
 DallasTemperature sensors(&oneWire);
@@ -202,13 +202,13 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
-  analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
+  analogWrite(MotorC_ENA,velocidade);// injeta a velocidade no motor
   
   //Le o potenciometro
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
-    if (estadoSubida == LOW) {  //botao clicado
+    if (estadoSubida == LOW) {  //botão clicado
       digitalWrite(MotorC_IN1, LOW);
       digitalWrite(MotorC_IN2, HIGH);
       
@@ -218,7 +218,7 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
       lcd.print("Subir"); //escreve
 
       }
-     if (estadoDescida == LOW) {  //botao clicado
+     if (estadoDescida == LOW) {  //botão clicado
       digitalWrite(MotorC_IN1, HIGH);
       digitalWrite(MotorC_IN2, LOW);
       
@@ -371,7 +371,7 @@ void Temperatura()
 {
   sensors.requestTemperatures(); 
   Celcius=sensors.getTempCByIndex(0);
-  if(Celcius != -127) //Acontece dar -127 quando os motores estao a trabalhar a alta velocidade
+  if(Celcius != -127) //Acontece aparecer -127 quando os motores estão a trabalhar a alta velocidade
   {
   lcd.setCursor(11,0); //Posiciona para escrever
   lcd.print(Celcius);

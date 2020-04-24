@@ -1,7 +1,7 @@
 
 //Motores
 // Motor A -> Lado direito
-int MotorA_IN1 = 4; //Cada motor tem 2 pins
+int MotorA_IN1 = 4; 
 int MotorA_IN2 = 5;
 // Motor B -> Lado esquerdo
 int MotorB_IN3 = 2;
@@ -26,7 +26,7 @@ int buttonDown = 11;
 
 void setup()
 {
-  // serial para a consola (testes)
+  //Verificar sempre se a consola esta no mesmo valor que abaixo, neste caso é o 38400
   Serial.begin(38400);
   //Motores
   pinMode(MotorA_IN1, OUTPUT); //Motor A
@@ -51,8 +51,10 @@ void loop()
   ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
   ControloMotorCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
 
+    //** descomentar para controlar a velocidade pelo joysick**//
   //ControloMotoresTraseirosJoystick(analogRead(A1),  analogRead(A0));
   //ControloMotorCentralJoystick(digitalRead(buttonUP),digitalRead(buttonDown));  
+
   //Delay para obter dados
   delay(500);
 
@@ -66,9 +68,9 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
-  analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
+  analogWrite(MotorC_ENA,velocidade);// injeta a velocidade no motor
   
-  //Le o potenciometro
+  //Lê o potenciometro
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
@@ -93,11 +95,11 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
 void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
 {
  
-  //Le o potenciometro
+  //Lê o potenciometro
   velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
-  analogWrite(MotorA_ENA,velocidade);// injecta a velocidade no motor
+  analogWrite(MotorA_ENA,velocidade);// injeta a velocidade no motor
   analogWrite(MotorB_ENB,velocidade);
 
     if ((eixoX > 460 && eixoX < 564) && (eixoY > 460 && eixoY < 564)) // neutro
@@ -113,7 +115,6 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
     //Trás
     if (eixoY < 460 && (eixoX > 460 && eixoX < 564))
     {
-      //Activa os motores
       digitalWrite(MotorA_IN1, LOW);
       digitalWrite(MotorA_IN2, HIGH);
       digitalWrite(MotorB_IN3, LOW);
@@ -174,15 +175,16 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
 }
 
 void ControloMotorCentralJoystick(int estadoSubida, int estadoDescida){
-   //Le o potenciometro
-  velocidade = 255; //não é possivel ajustar a velocidade
-  analogWrite(MotorC_ENA,velocidade);// injecta a velocidade no motor
-
-    if (estadoSubida == LOW) {  //button is pressed
+   //Lê o potenciometro
+  velocidade = 255; //não é possível ajustar a velocidade
+  analogWrite(MotorC_ENA,velocidade);// injeta a velocidade no motor
+     //Clicado para subir
+    if (estadoSubida == LOW) { 
       digitalWrite(MotorC_IN1, LOW);
       digitalWrite(MotorC_IN2, HIGH);
       }
-     if (estadoDescida == LOW) {  //button is pressed
+      //Clicado para descer
+     if (estadoDescida == LOW) {  
       digitalWrite(MotorC_IN1, HIGH);
       digitalWrite(MotorC_IN2, LOW);
       }
@@ -215,8 +217,8 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
       digitalWrite(MotorB_IN3, LOW);
       digitalWrite(MotorB_IN4, HIGH);
       //Velocidade, como estamos a ir para trás temos de inverter as leituras
-      eixoY = eixoY - 460; // Numero fica negativo
-      eixoY = eixoY * -1;  // Torna o numero positivo, uma velocidade não é negativa.
+      eixoY = eixoY - 460; // Número fica negativo
+      eixoY = eixoY * -1;  // Torna o número positivo, uma velocidade não é negativa.
       velocidadeA = map(eixoY, 0, 460, 0, 230);
       velocidadeB = map(eixoY, 0, 460, 0, 230);   
     }
@@ -298,7 +300,7 @@ void ControloMotoresTraseirosJoystick(int eixoX, int eixoY)
 
     }
   }
-      // injecta a velocidade no motor
+      // injeta a velocidade no motor
         analogWrite(MotorA_ENA,velocidadeA);
         analogWrite(MotorB_ENB,velocidadeB);
 }
