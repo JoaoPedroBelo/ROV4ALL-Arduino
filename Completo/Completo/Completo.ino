@@ -1,38 +1,11 @@
 #include "Wire.h"
 #include <LiquidCrystal_I2C.h>
-#include "I2Cdev.h"
-#include "MPU9250.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
 
 // Define um display 2 linhas por 12 coluna
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-//para o giroscpio
-MPU9250 accelgyro;
-I2Cdev   I2C_M;
-uint8_t buffer_m[6];
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
-int16_t   mx, my, mz;
-float heading;
-float tiltheading;
-float Axyz[3];
-float Gxyz[3];
-float Mxyz[3];
-#define sample_num_mdate  5000   
-volatile float mx_sample[3];
-volatile float my_sample[3];
-volatile float mz_sample[3];
-static float mx_centre = 0;
-static float my_centre = 0;
-static float mz_centre = 0;
-volatile int mx_max =0;
-volatile int my_max =0;
-volatile int mz_max =0;
-volatile int mx_min =0;
-volatile int my_min =0;
-volatile int mz_min =0;
 
 //para o sensor de temperatura
 #define temperatura_pin 13
@@ -42,14 +15,6 @@ float Celcius=0;
 
 
 //Contantes
-//Valor de referência para a bussola
-//EIXO DO X
-#define RefSul 35
-#define RefNorte 4
-
-//EIXO do Y
-#define RefOeste 25
-
 //Motores
 // Motor A -> Lado direito
 int MotorA_IN1 = 4;
@@ -84,6 +49,7 @@ void setup()
   
   //Temperatura 
   sensors.begin();
+  
 
   //Mensagem de inicio
   lcd.print("a iniciar");
@@ -109,16 +75,9 @@ void setup()
   pinMode(buttonUP, INPUT);
   pinMode(buttonDown, INPUT);
   pinMode(buttonLed, OUTPUT);
+    
+  delay(2000);
 
-  // A iniciar I2C
-  Serial.println("a iniciar I2C....");
-  accelgyro.initialize();
-
-  // verifica as ligacoes
-  Serial.println("Testando ligacoes...");
-  Serial.println(accelgyro.testConnection() ? "MPU9250 ligado com sucesso" : "MPU9250 ligacao falhou");
-  
-  delay(1000);
   
 }
 
@@ -126,19 +85,9 @@ void loop()
 {
   //Liga o led dos botões
   digitalWrite(buttonLed,HIGH);
-
-  //lê giroscopio
-  getAccel_Data();
-  getGyro_Data();
-  getCompassDate_calibrated(); // calibra o compass
   
-  //Dados para analisar aceleração Posteriormente
-  Serial.println("Acceleration(g) of X,Y,Z:");
-  Serial.print(Axyz[0]); 
-  Serial.print(",");
-  Serial.print(Axyz[1]); 
-  Serial.print(",");
-  Serial.println(Axyz[2]);
+  Temperatura();
+
   
   //Chama a função dos motores traseiros
   ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
@@ -146,55 +95,10 @@ void loop()
   //Chama a função do motor central
   ControloMotorCentralPotenciometro(digitalRead(buttonUP),digitalRead(buttonDown));
 
-  //Chama a função da bússola
-  bussola(Mxyz[0], Mxyz[1]);
-
-  //Chama a função da temperatura
-  Temperatura();
-
   //Delay para obter dados
-  delay(100);
+  delay(50);
 }
 
-
-void bussola(float posicaoX, float posicaoY)
-{
-  lcd.setCursor(0,0); //Posiciona para escrever
-  lcd.print("         "); //Apaga
-
-  //NORTE
-  if (posicaoX < RefNorte)
-  {
-    lcd.setCursor(0,0); //Posiciona para escrever
-    lcd.print("Norte"); //escreve
-  }
-
-  //OESTE e ESTE
-  else if (posicaoX <= RefSul && posicaoX >= RefNorte)
-  {
-
-    //Oeste
-    if (posicaoY > RefOeste)
-    {
-      lcd.setCursor(0,0); //Posiciona para escrever
-      lcd.print("Este"); //escreve
-    }
-
-    //este
-    else
-    {
-      lcd.setCursor(0,0); //Posiciona para escrever
-      lcd.print("Oeste"); //escreve
-    }
-  }
-
-  //SUL
-  else if (posicaoX > RefSul)
-  {
-    lcd.setCursor(0,0); //Posiciona para escrever
-    lcd.print("Sul"); //escreve
-  }
-}
 
 void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
 {
@@ -212,9 +116,9 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
       digitalWrite(MotorC_IN1, LOW);
       digitalWrite(MotorC_IN2, HIGH);
       
-      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.setCursor(0,0); //Posiciona para escrever
       lcd.print("          "); //escreve
-      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.setCursor(0,0); //Posiciona para escrever
       lcd.print("Subir"); //escreve
 
       }
@@ -222,15 +126,20 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
       digitalWrite(MotorC_IN1, HIGH);
       digitalWrite(MotorC_IN2, LOW);
       
-      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.setCursor(0,0); //Posiciona para escrever
       lcd.print("          "); //escreve
-      lcd.setCursor(0,1); //Posiciona para escrever
+      lcd.setCursor(0,0); //Posiciona para escrever
       lcd.print("Descer"); //escreve
       }
 
    if  (estadoSubida != LOW && estadoDescida != LOW){ //nenhum clicado, motor desligado
       digitalWrite(MotorC_IN1, LOW);
       digitalWrite(MotorC_IN2, LOW);
+      lcd.setCursor(0,0); //Posiciona para escrever
+      lcd.print("          "); //escreve
+      lcd.setCursor(0,0); //Posiciona para escrever
+      lcd.print("Neutro"); //escreve
+      
   }
   
 }
@@ -265,7 +174,6 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
   lcd.setCursor(15,1); //Posiciona para escrever
   lcd.print("%"); //Imprima velocidade percentagem
 
-  Serial.println(VelocidadePerc); //Velocidade para ecra
   if ((eixoX > 460 && eixoX < 564) && (eixoY > 460 && eixoY < 564)) // neutro
   {
     digitalWrite(MotorA_IN1, LOW);
@@ -274,9 +182,9 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
     digitalWrite(MotorB_IN4, LOW);
 
     lcd.setCursor(0,1); //Posiciona para escrever
-    lcd.print("          "); //escreve
+    lcd.print("            "); //escreve
     lcd.setCursor(0,1); //Posiciona para escrever
-    lcd.print("parado"); //escreve
+    lcd.print("Neutro"); //escreve
 
   }
   else
@@ -293,7 +201,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Tras"); //escreve
+      lcd.print("Recuar"); //escreve
 
 
     }
@@ -307,7 +215,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Frente"); //escreve
+      lcd.print("Avançar"); //escreve
     }
 
     //Esquerda Frente
@@ -320,7 +228,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("fr/es"); //escreve
+      lcd.print("Avançar / es"); //escreve
     }
 
     //Direita Frente
@@ -333,7 +241,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("      "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("fr/dr"); //escreve
+      lcd.print("Avançar / dr"); //escreve
     }
 
     //Esquerda Trás
@@ -346,7 +254,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("tr/es"); //escreve
+      lcd.print("Recuar / es"); //escreve
     }
 
     //Direita Trás
@@ -359,7 +267,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("tr/dr"); //escreve
+      lcd.print("Recuar / dr"); //escreve
     }
 
   }
@@ -371,7 +279,7 @@ void Temperatura()
 {
   sensors.requestTemperatures(); 
   Celcius=sensors.getTempCByIndex(0);
-  if(Celcius != -127) //Acontece aparecer -127 quando os motores estão a trabalhar a alta velocidade
+  if(Celcius != -127) //pode aparecer -127 quando os motores estão a trabalhar a alta velocidade
   {
   lcd.setCursor(11,0); //Posiciona para escrever
   lcd.print(Celcius);
@@ -379,121 +287,4 @@ void Temperatura()
   lcd.print("C");
   }
 
-}
-
-//****** Funções da biblioteca do giroscopio, mais informação http://wiki.seeedstudio.com/Grove-IMU_9DOF_v2.0/
-void Mxyz_init_calibrated ()
-{
-
-  Serial.println(F("Before using 9DOF,we need to calibrate the compass frist,It will takes about 2 minutes."));
-  Serial.print("  ");
-  Serial.println(F("During  calibratting ,you should rotate and turn the 9DOF all the time within 2 minutes."));
-  Serial.print("  ");
-  Serial.println(F("If you are ready ,please sent a command data 'ready' to start sample and calibrate."));
-  while(!Serial.find("ready")); 
-  Serial.println("  ");
-  Serial.println("ready");
-  Serial.println("Sample starting......");
-  Serial.println("waiting ......");
-  
-  get_calibration_Data ();
-  
-  Serial.println("     ");
-  Serial.println("compass calibration parameter ");
-  Serial.print(mx_centre);
-  Serial.print("     ");
-  Serial.print(my_centre);
-  Serial.print("     ");
-  Serial.println(mz_centre);
-  Serial.println("    ");
-}
-
-
-void get_calibration_Data ()
-{
-    for (int i=0; i<sample_num_mdate;i++)
-      {
-      get_one_sample_date_mxyz();
-      /*
-      Serial.print(mx_sample[2]);
-      Serial.print(" ");
-      Serial.print(my_sample[2]);                            //you can see the sample data here .
-      Serial.print(" ");
-      Serial.println(mz_sample[2]);
-      */
-      if (mx_sample[2]>=mx_sample[1])mx_sample[1] = mx_sample[2];     
-      if (my_sample[2]>=my_sample[1])my_sample[1] = my_sample[2]; //find max value      
-      if (mz_sample[2]>=mz_sample[1])mz_sample[1] = mz_sample[2];   
-      
-      if (mx_sample[2]<=mx_sample[0])mx_sample[0] = mx_sample[2];
-      if (my_sample[2]<=my_sample[0])my_sample[0] = my_sample[2];//find min value
-      if (mz_sample[2]<=mz_sample[0])mz_sample[0] = mz_sample[2];
-            
-      }
-      
-      mx_max = mx_sample[1];
-      my_max = my_sample[1];
-      mz_max = mz_sample[1];      
-          
-      mx_min = mx_sample[0];
-      my_min = my_sample[0];
-      mz_min = mz_sample[0];
-  
-
-  
-      mx_centre = (mx_max + mx_min)/2;
-      my_centre = (my_max + my_min)/2;
-      mz_centre = (mz_max + mz_min)/2;  
-  
-}
-
-void get_one_sample_date_mxyz()
-{   
-    getCompass_Data();
-    mx_sample[2] = Mxyz[0];
-    my_sample[2] = Mxyz[1];
-    mz_sample[2] = Mxyz[2];
-} 
-
-
-void getAccel_Data(void)
-{
-  accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-  Axyz[0] = (double) ax / 16384;//16384  LSB/g
-  Axyz[1] = (double) ay / 16384;
-  Axyz[2] = (double) az / 16384; 
-}
-
-void getGyro_Data(void)
-{
-  accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
-  Gxyz[0] = (double) gx * 250 / 32768;//131 LSB(��/s)
-  Gxyz[1] = (double) gy * 250 / 32768;
-  Gxyz[2] = (double) gz * 250 / 32768;
-}
-
-void getCompass_Data(void)
-{
-  I2C_M.writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //enable the magnetometer
-  delay(10);
-  I2C_M.readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer_m);
-  
-    mx = ((int16_t)(buffer_m[1]) << 8) | buffer_m[0] ;
-  my = ((int16_t)(buffer_m[3]) << 8) | buffer_m[2] ;
-  mz = ((int16_t)(buffer_m[5]) << 8) | buffer_m[4] ;  
-  
-  //Mxyz[0] = (double) mx * 1200 / 4096;
-  //Mxyz[1] = (double) my * 1200 / 4096;
-  //Mxyz[2] = (double) mz * 1200 / 4096;
-  Mxyz[0] = (double) mx * 4800 / 8192;
-  Mxyz[1] = (double) my * 4800 / 8192;
-  Mxyz[2] = (double) mz * 4800 / 8192;
-}
-
-void getCompassDate_calibrated ()
-{
-  getCompass_Data();
-  Mxyz[0] = Mxyz[0] - mx_centre;
-  Mxyz[1] = Mxyz[1] - my_centre;
-  Mxyz[2] = Mxyz[2] - mz_centre;  
 }
