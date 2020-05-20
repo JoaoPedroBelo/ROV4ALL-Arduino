@@ -76,7 +76,7 @@ void setup()
   pinMode(buttonDown, INPUT);
   pinMode(buttonLed, OUTPUT);
     
-  delay(2000);
+  delay(5000);
 
   
 }
