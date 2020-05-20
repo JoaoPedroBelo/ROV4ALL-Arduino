@@ -49,6 +49,8 @@ void setup()
   
   //Temperatura 
   sensors.begin();
+  sensors.requestTemperatures(); 
+
   
 
   //Mensagem de inicio
@@ -75,7 +77,8 @@ void setup()
   pinMode(buttonUP, INPUT);
   pinMode(buttonDown, INPUT);
   pinMode(buttonLed, OUTPUT);
-    
+
+
   delay(5000);
 
   
