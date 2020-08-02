@@ -285,6 +285,7 @@ void Temperatura()
   if(Celcius != -127) //pode aparecer -127 quando os motores estão a trabalhar a alta velocidade
   {
   lcd.setCursor(11,0); //Posiciona para escrever
+  Serial.println(Celcius);
   lcd.print(Celcius);
   lcd.setCursor(15,0);
   lcd.print("C");
