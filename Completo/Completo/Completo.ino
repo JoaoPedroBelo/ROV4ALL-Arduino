@@ -42,6 +42,10 @@ int buttonLed= A3;
 
 void setup()
 {
+  // serial para a consola (testes)
+  Serial.begin(38400);
+   delay(1000);
+
   // inicia o LCD
   lcd.begin();
   // Liga a luz
@@ -49,18 +53,13 @@ void setup()
   
   //Temperatura 
   sensors.begin();
-  sensors.requestTemperatures(); 
-
-  
+  delay(1000);
 
   //Mensagem de inicio
   lcd.print("a iniciar");
   
   // Inicia o I2C
   Wire.begin(); 
-
-  // serial para a consola (testes)
-  Serial.begin(38400);
 
   //Motores
   pinMode(MotorA_IN1, OUTPUT); //Motor A
@@ -78,8 +77,7 @@ void setup()
   pinMode(buttonDown, INPUT);
   pinMode(buttonLed, OUTPUT);
 
-
-  delay(5000);
+  sensors.requestTemperatures(); 
 
   
 }
@@ -91,7 +89,6 @@ void loop()
   
   Temperatura();
 
-  
   //Chama a função dos motores traseiros
   ControloMotoresTraseirosPotenciometro(analogRead(A1),  analogRead(A0));
 
@@ -111,8 +108,6 @@ void ControloMotorCentralPotenciometro (int estadoSubida, int estadoDescida)
   velocidade = velocidade*0.23; 
   analogWrite(MotorC_ENA,velocidade);// injeta a velocidade no motor
   
-  //Le o potenciometro
-  velocidade = analogRead(A2);
   //Converte para as unidades do motor (0-255)
   velocidade = velocidade*0.23; 
     if (estadoSubida == LOW) {  //botão clicado
@@ -159,8 +154,8 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
   analogWrite(MotorA_ENA,velocidade);// injecta a velocidade no motor
   analogWrite(MotorB_ENB,velocidade);
   
-  int VelocidadePerc = map(velocidade, 0, 220, 0, 100); //Velocidade em percentagem
-  if(VelocidadePerc>100){
+  int VelocidadePerc = map(velocidade, 0, 255, 0, 100); //Velocidade em percentagem
+  if(VelocidadePerc>85){
     VelocidadePerc=100;
   }
   //Apenas cosmetico
@@ -204,7 +199,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Recuar"); //escreve
+      lcd.print("Recuar     "); //escreve
 
 
     }
@@ -218,7 +213,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Avançar"); //escreve
+      lcd.print("Avancar     "); //escreve
     }
 
     //Esquerda Frente
@@ -231,7 +226,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Avançar / es"); //escreve
+      lcd.print("Avancar / es"); //escreve
     }
 
     //Direita Frente
@@ -244,7 +239,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("      "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Avançar / dr"); //escreve
+      lcd.print("Avancar / dr"); //escreve
     }
 
     //Esquerda Trás
@@ -257,7 +252,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Recuar / es"); //escreve
+      lcd.print("Recuar / es "); //escreve
     }
 
     //Direita Trás
@@ -270,7 +265,7 @@ void ControloMotoresTraseirosPotenciometro(int eixoX, int eixoY)
       lcd.setCursor(0,1); //Posiciona para escrever
       lcd.print("          "); //escreve
       lcd.setCursor(0,1); //Posiciona para escrever
-      lcd.print("Recuar / dr"); //escreve
+      lcd.print("Recuar / dr "); //escreve
     }
 
   }
